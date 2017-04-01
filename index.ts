@@ -1,3 +1,11 @@
+// TODO:
+// * Feature detection (bail if 'tags' in document)
+// * Add support for with (document.tags) syntax
+// * Add support for other style collections (classes, ids)
+// * Add support for inline styles (<P STYLE="color = 'green'">)
+// * Add support for pseudo classes ('Typographical Elements' in proposal)
+// * Normalise property names - camelCase to kebab-case, expand shorthand properties (e.g. bgColor)
+
 // Get JS Style Sheets
 // TODO: querySelectorAll, loop
 // TODO: External style sheets
@@ -23,7 +31,7 @@ let tagsProxy = new Proxy<any>(document.tags, {
 // Replace document.X assignments with calls to proxy
 styles = styles.replace(/document.tags/gi, 'tagsProxy');
 
-// Evaluate!
+// Evaluate is now considered sexy
 eval(styles);
 
 // Build CSS
