@@ -1,0 +1,16 @@
+{
+  "name": "jsss-polyfill",
+  "version": "0.0.1",
+  "description": "Polyfill for so-called 'modern' browsers to support JavaScript Style Sheets",
+  "main": "index.js",
+  "repository": "git@github.com:lindsayevans/jsss-polyfill.git",
+  "author": "Lindsay Evans <linz@linz.id.au>",
+  "license": "NPL",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w"
+  },
+  "devDependencies": {
+    "typescript": "^2.2.2"
+  }
+}
