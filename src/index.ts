@@ -22,8 +22,8 @@ export class JsssPolyfill {
         }
 
         // Get JS Style Sheets
-        let $stylesheets = Array.from(document.querySelectorAll('style[type="text/javascript"]')) as Array<HTMLElement>;
-        let $externalStylesheets = Array.from(document.querySelectorAll('link[rel="stylesheet"][type="text/javascript"]')) as Array<HTMLElement>;
+        let $stylesheets = Array.from(document.querySelectorAll('style[type="text/javascript"]')) as Array<HTMLStyleElement>;
+        let $externalStylesheets = Array.from(document.querySelectorAll('link[rel="stylesheet"][type="text/javascript"]')) as Array<HTMLLinkElement>;
 
         // Add empty style collections to document
         document.tags = {};
@@ -42,18 +42,7 @@ export class JsssPolyfill {
 
         // Load each external stylesheet & process it
         $externalStylesheets.forEach($stylesheet => {
-            fetch($stylesheet.getAttribute('href'))
-                .then(response => {
-                    return response.text();
-                })
-                .then(body => {
-                    return new Promise((resolve, reject) => {
-                        this.processStylesheet(body);
-                        // FIXME: We're rebuilding the entire style collection every time, which is probably inefficient
-                        this.injectCss(this.buildCss());
-                        resolve();
-                    });
-                });
+            this.loadExternalStylesheet($stylesheet);
         });
 
         this.injectCss(this.buildCss());
@@ -80,6 +69,21 @@ export class JsssPolyfill {
      */
     public jsssSupported(): boolean {
         return 'tags' in document && 'ids' in document && 'classes' in document;
+    }
+
+    /**
+     * Loads an external stylesheet 
+     */
+    private async loadExternalStylesheet($stylesheet: HTMLLinkElement) {
+
+        let response = await fetch($stylesheet.getAttribute('href'));
+        let css = await response.text();
+
+        this.processStylesheet(css);
+
+        // FIXME: We're rebuilding the entire style collection every time, which is probably inefficient
+        this.injectCss(this.buildCss());
+
     }
 
     /**
