@@ -18,10 +18,8 @@ export class JsssPolyfill {
         }
 
         // Get JS Style Sheets
-        // TODO: querySelectorAll, loop
         // TODO: External style sheets
-        let $stylesheet = document.querySelector('style[type="text/javascript"]');
-        let styles = $stylesheet.innerHTML.trim();
+        let $stylesheets = Array.from(document.querySelectorAll('style[type="text/javascript"]')) as Array<HTMLElement>;
 
         // Add empty style collections to document
         document.tags = {};
@@ -33,14 +31,21 @@ export class JsssPolyfill {
         let idsProxy = new Proxy<any>(document.ids, PropertyInitialiserFactory.createHandler(document.ids));
         let classesProxy = new Proxy<any>(document.classes, PropertyInitialiserFactory.createHandler(document.classes));
 
-        // Replace document.X assignments with calls to proxy
-        styles = styles
-            .replace(/document.tags/gi, 'tagsProxy')
-            .replace(/document.ids/gi, 'idsProxy')
-            .replace(/document.classes/gi, 'classesProxy');
+        // Process each stylesheet
+        $stylesheets.forEach($stylesheet => {
 
-        // Evaluate is now considered sexy
-        eval(styles);
+            let styles = $stylesheet.innerHTML.trim();
+
+            // Replace document.X assignments with calls to proxy
+            styles = styles
+                .replace(/document.tags/gi, 'tagsProxy')
+                .replace(/document.ids/gi, 'idsProxy')
+                .replace(/document.classes/gi, 'classesProxy');
+
+            // Am I eval? Yes I am
+            eval(styles);
+
+        });
 
         // Build CSS
         let cssStyles = '';
