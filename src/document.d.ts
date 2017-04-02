@@ -1,6 +1,8 @@
 
+type JsssStyleCollection = {[name: string]: {[property: string]: string}};
+
 interface Document {
-    tags: {[name: string]: {[property: string]: string}};
-    ids: {[name: string]: {[property: string]: string}};
-    classes: {[name: string]: {[property: string]: string}};
+    tags: JsssStyleCollection;
+    ids: JsssStyleCollection;
+    classes: JsssStyleCollection;
 }

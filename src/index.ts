@@ -10,6 +10,10 @@
 */
 export class JsssPolyfill {
 
+    private tagsProxy: ProxyConstructor;
+    private idsProxy: ProxyConstructor;
+    private classesProxy: ProxyConstructor;
+
     constructor() {
 
         // Bail out if the client already has a JSSS implementation
@@ -18,8 +22,8 @@ export class JsssPolyfill {
         }
 
         // Get JS Style Sheets
-        // TODO: External style sheets
         let $stylesheets = Array.from(document.querySelectorAll('style[type="text/javascript"]')) as Array<HTMLElement>;
+        let $externalStylesheets = Array.from(document.querySelectorAll('link[rel="stylesheet"][type="text/javascript"]')) as Array<HTMLElement>;
 
         // Add empty style collections to document
         document.tags = {};
@@ -27,58 +31,47 @@ export class JsssPolyfill {
         document.classes = {};
 
         // Proxies to initialise undefined properties
-        let tagsProxy = new Proxy<any>(document.tags, PropertyInitialiserFactory.createHandler(document.tags));
-        let idsProxy = new Proxy<any>(document.ids, PropertyInitialiserFactory.createHandler(document.ids));
-        let classesProxy = new Proxy<any>(document.classes, PropertyInitialiserFactory.createHandler(document.classes));
+        this.tagsProxy = new Proxy(document.tags, PropertyInitialiserFactory.createHandler(document.tags));
+        this.idsProxy = new Proxy(document.ids, PropertyInitialiserFactory.createHandler(document.ids));
+        this.classesProxy = new Proxy(document.classes, PropertyInitialiserFactory.createHandler(document.classes));
 
         // Process each stylesheet
         $stylesheets.forEach($stylesheet => {
-
-            let styles = $stylesheet.innerHTML.trim();
-
-            // Replace document.X assignments with calls to proxy
-            styles = styles
-                .replace(/document.tags/gi, 'tagsProxy')
-                .replace(/document.ids/gi, 'idsProxy')
-                .replace(/document.classes/gi, 'classesProxy');
-
-            // Am I eval? Yes I am
-            eval(styles);
-
+            this.processStylesheet($stylesheet.innerHTML);
         });
 
-        // Build CSS
-        let cssStyles = '';
+        // Load each external stylesheet & process it
+        $externalStylesheets.forEach($stylesheet => {
+            fetch($stylesheet.getAttribute('href'))
+                .then(response => {
+                    return response.text();
+                })
+                .then(body => {
+                    return new Promise((resolve, reject) => {
+                        this.processStylesheet(body);
+                        // FIXME: We're rebuilding the entire style collection every time, which is probably inefficient
+                        this.injectCss(this.buildCss());
+                        resolve();
+                    });
+                });
+        });
 
-        // TODO: Refactor
-        for (let tagName in document.tags) {
-            cssStyles += `${tagName} {`;
-            for (let propertyName in document.tags[tagName]) {
-                cssStyles += `${this.normalisePropertyName(propertyName)}: ${document.tags[tagName][propertyName]};`;
-            }
-            cssStyles += '}';
-        }
+        this.injectCss(this.buildCss());
+    }
 
-        for (let id in document.ids) {
-            cssStyles += `#${id} {`;
-            for (let propertyName in document.ids[id]) {
-                cssStyles += `${this.normalisePropertyName(propertyName)}: ${document.ids[id][propertyName]};`;
-            }
-            cssStyles += '}';
-        }
+    /**
+     * Process JSSS styles
+     */
+    public processStylesheet(styles: string) {
 
-        for (let className in document.classes) {
-            cssStyles += `.${className} {`;
-            for (let propertyName in document.classes[className]) {
-                cssStyles += `${this.normalisePropertyName(propertyName)}: ${document.classes[className][propertyName]};`;
-            }
-            cssStyles += '}';
-        }
+        // Replace document.X assignments with calls to proxy
+        styles = styles
+            .replace(/document.tags/gi, 'this.tagsProxy')
+            .replace(/document.ids/gi, 'this.idsProxy')
+            .replace(/document.classes/gi, 'this.classesProxy');
 
-        // Inject CSS into document
-        let $css = document.createElement('style');
-        $css.innerText = cssStyles;
-        document.head.appendChild($css);
+        // Am I eval? Yes I am
+        eval(styles);
 
     }
 
@@ -87,6 +80,41 @@ export class JsssPolyfill {
      */
     public jsssSupported(): boolean {
         return 'tags' in document && 'ids' in document && 'classes' in document;
+    }
+
+    /**
+     * Builds CSS stylesheet from JSSS style collections
+     */
+    private buildCss(): string {
+
+        let cssStyles = '';
+        let collectionNames = ['tags', 'ids', 'classes'];
+
+        collectionNames.forEach(name => {
+
+            let collection: JsssStyleCollection = document[name];
+            let prefix = name === 'ids' ? '#' : name === 'classes' ? '.' : '';
+
+            for (let id in collection) {
+                cssStyles += `${prefix}${id} {`;
+                for (let propertyName in collection[id]) {
+                    cssStyles += `${this.normalisePropertyName(propertyName)}: ${collection[id][propertyName]};`;
+                }
+                cssStyles += '}';
+            }
+        })
+
+        return cssStyles;
+
+    }
+
+    /**
+     * Injects provided CSS styles into the document
+     */
+    private injectCss(cssStyles: string) {
+        let $css = document.createElement('style');
+        $css.innerText = cssStyles;
+        document.head.appendChild($css);
     }
 
     /**
