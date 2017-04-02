@@ -4,15 +4,18 @@
  * Adds support for JavaScript Style Sheets
  * 
  * TODO:
- * - Feature detection (bail if 'tags' in document)
  * - Add support for with (document.tags) syntax
  * - Add support for inline styles (<P STYLE="color = 'green'">)
  * - Add support for pseudo classes ('Typographical Elements' in proposal)
 */
-
 export class JsssPolyfill {
 
     constructor() {
+
+        // Bail out if the client already has a JSSS implementation
+        if (this.jsssSupported()) {
+            return;
+        }
 
         // Get JS Style Sheets
         // TODO: querySelectorAll, loop
@@ -72,6 +75,13 @@ export class JsssPolyfill {
         $css.innerText = cssStyles;
         document.head.appendChild($css);
 
+    }
+
+    /**
+     * Check if the client supports JSSS
+     */
+    public jsssSupported(): boolean {
+        return 'tags' in document && 'ids' in document && 'classes' in document;
     }
 
     /**
