@@ -8,7 +8,6 @@
  * - Add support for with (document.tags) syntax
  * - Add support for inline styles (<P STYLE="color = 'green'">)
  * - Add support for pseudo classes ('Typographical Elements' in proposal)
- * - Normalise property names - camelCase to kebab-case, expand shorthand properties (e.g. bgColor)
 */
 
 export class JsssPolyfill {
@@ -47,7 +46,7 @@ export class JsssPolyfill {
         for (let tagName in document.tags) {
             cssStyles += `${tagName} {`;
             for (let propertyName in document.tags[tagName]) {
-                cssStyles += `${propertyName}: ${document.tags[tagName][propertyName]};`;
+                cssStyles += `${this.normalisePropertyName(propertyName)}: ${document.tags[tagName][propertyName]};`;
             }
             cssStyles += '}';
         }
@@ -55,7 +54,7 @@ export class JsssPolyfill {
         for (let id in document.ids) {
             cssStyles += `#${id} {`;
             for (let propertyName in document.ids[id]) {
-                cssStyles += `${propertyName}: ${document.ids[id][propertyName]};`;
+                cssStyles += `${this.normalisePropertyName(propertyName)}: ${document.ids[id][propertyName]};`;
             }
             cssStyles += '}';
         }
@@ -63,7 +62,7 @@ export class JsssPolyfill {
         for (let className in document.classes) {
             cssStyles += `.${className} {`;
             for (let propertyName in document.classes[className]) {
-                cssStyles += `${propertyName}: ${document.classes[className][propertyName]};`;
+                cssStyles += `${this.normalisePropertyName(propertyName)}: ${document.classes[className][propertyName]};`;
             }
             cssStyles += '}';
         }
@@ -75,6 +74,25 @@ export class JsssPolyfill {
 
     }
 
+    /**
+     * Normalise property names
+     * - Converts camelCase to kebab-case
+     * - Expands shorthand properties (e.g. bgColor)
+     */
+    private normalisePropertyName(propertyName: string): string {
+
+        // Expand shorthand property names
+        // TODO: Check if there are others
+        propertyName = propertyName.replace(/^bg/, 'background');
+
+        // Convert camelCase to kebab-case
+        propertyName = propertyName.replace(/([a-z]*)([A-Z]+)([a-z]*)/g, (match, p1, p2, p3) => {
+            return `${p1}-${p2.toLowerCase()}${p3}`;
+        })
+
+        return propertyName;
+    }
+
 }
 
 class PropertyInitialiserFactory {
@@ -84,7 +102,6 @@ class PropertyInitialiserFactory {
             get: (obj, prop) => {
 
                 if (collection[prop] === undefined) {
-                    // TODO: Need a Proxy here to intercept setting style properties, so that we can normalise property names etc.
                     collection[prop] = {};
                 }
 
