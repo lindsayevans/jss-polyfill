@@ -26,39 +26,10 @@ export class JsssPolyfill {
         document.ids = {};
         document.classes = {};
 
-        // Proxy to initialise undefined properties
-        // TODO: Create a factory or something to handle this cruft
-        let tagsProxy = new Proxy<any>(document.tags, {
-            get: (obj, prop) => {
-
-                if (document.tags[prop] === undefined) {
-                    // TODO: Need a Proxy here to intercept setting style properties, so that we can normalise property names etc.
-                    document.tags[prop] = {};
-                }
-
-                return obj[prop];
-            }
-        });
-        let idsProxy = new Proxy<any>(document.ids, {
-            get: (obj, prop) => {
-
-                if (document.ids[prop] === undefined) {
-                    document.ids[prop] = {};
-                }
-
-                return obj[prop];
-            }
-        });
-        let classesProxy = new Proxy<any>(document.classes, {
-            get: (obj, prop) => {
-
-                if (document.classes[prop] === undefined) {
-                    document.classes[prop] = {};
-                }
-
-                return obj[prop];
-            }
-        });
+        // Proxies to initialise undefined properties
+        let tagsProxy = new Proxy<any>(document.tags, PropertyInitialiserFactory.createHandler(document.tags));
+        let idsProxy = new Proxy<any>(document.ids, PropertyInitialiserFactory.createHandler(document.ids));
+        let classesProxy = new Proxy<any>(document.classes, PropertyInitialiserFactory.createHandler(document.classes));
 
         // Replace document.X assignments with calls to proxy
         styles = styles
@@ -102,6 +73,24 @@ export class JsssPolyfill {
         $css.innerText = cssStyles;
         document.head.appendChild($css);
 
+    }
+
+}
+
+class PropertyInitialiserFactory {
+
+    public static createHandler(collection) {
+        return {   
+            get: (obj, prop) => {
+
+                if (collection[prop] === undefined) {
+                    // TODO: Need a Proxy here to intercept setting style properties, so that we can normalise property names etc.
+                    collection[prop] = {};
+                }
+
+                return obj[prop];
+            }
+        };
     }
 
 }
