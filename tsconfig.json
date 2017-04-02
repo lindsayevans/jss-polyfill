@@ -3,7 +3,8 @@
         "module": "system",
         "target": "es5",
         "noImplicitAny": false,
-        "sourceMap": false,
+        "sourceMap": true,
+        "outDir": "./dist",
         "lib": [
             "dom",
             "es5",
@@ -13,7 +14,7 @@
         ]
     },
     "include": [
-        "**/*.ts"
+        "src/**/*.ts"
     ],
     "exclude": [
         "node_modules"

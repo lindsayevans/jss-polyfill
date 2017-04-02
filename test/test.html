@@ -17,9 +17,9 @@
         <h1 id="heading">JavaScript Style Sheets</h1>
         <p class="para">Aww yis</p>
 
-        <script src="node_modules/systemjs/dist/system.js"></script>
+        <script src="../node_modules/systemjs/dist/system.js"></script>
         <script>
-        SystemJS.import('index.js').then(m => {
+        SystemJS.import('../dist/index.js').then(m => {
             new m.JsssPolyfill();
         });
         </script>
