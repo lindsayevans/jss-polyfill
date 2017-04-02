@@ -1,12 +1,20 @@
 {
     "compilerOptions": {
-        "module": "commonjs",
-        "target": "es6",
+        "module": "system",
+        "target": "es5",
         "noImplicitAny": false,
-        "sourceMap": true
+        "sourceMap": true,
+        "outDir": "./dist",
+        "lib": [
+            "dom",
+            "es5",
+            "es2015.core",
+            "es2015.promise",
+            "es2015.proxy"
+        ]
     },
     "include": [
-        "**/*.ts"
+        "src/**/*.ts"
     ],
     "exclude": [
         "node_modules"
