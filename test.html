@@ -9,6 +9,7 @@
         document.tags.H1.textDecoration = 'blink'
         document.ids.heading.font = '24pt cursive'
         document.classes.para.font = '12px fantasy'
+        document.classes.para.textDecoration = 'underline'
         </style>
 
     </head>
@@ -16,7 +17,12 @@
         <h1 id="heading">JavaScript Style Sheets</h1>
         <p class="para">Aww yis</p>
 
-        <script src="index.js"></script>
+        <script src="node_modules/systemjs/dist/system.js"></script>
+        <script>
+        SystemJS.import('index.js').then(m => {
+            new m.JsssPolyfill();
+        });
+        </script>
 
     </body>
 </html>
