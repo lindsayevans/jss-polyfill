@@ -2,7 +2,7 @@
   "name": "jsss-polyfill",
   "version": "0.0.1",
   "description": "Polyfill for so-called 'modern' browsers to support JavaScript Style Sheets",
-  "main": "index.js",
+  "main": "dist/index.js",
   "repository": "git@github.com:lindsayevans/jsss-polyfill.git",
   "author": "Lindsay Evans <linz@linz.id.au>",
   "license": "NPL",
@@ -10,7 +10,9 @@
     "build": "tsc",
     "dev": "run-p watch serve",
     "serve": "http-server",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "package:npm": "yarn pack --filename jsss-polyfill.tgz",
+    "publish:npm": "yarn publish jsss-polyfill.tgz"
   },
   "devDependencies": {
     "http-server": "^0.9.0",
