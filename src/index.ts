@@ -10,9 +10,21 @@
 */
 export class JsssPolyfill {
 
-    private tagsProxy: ProxyConstructor;
-    private idsProxy: ProxyConstructor;
-    private classesProxy: ProxyConstructor;
+    public collectionNames = [
+        'tags',
+        'classes',
+        'ids'
+    ];
+
+    public collectionPrefixes = {
+        'tags': '',
+        'classes': '.',
+        'ids': '#'
+    };
+
+    public stylesheetSelectors = 'style[type="text/javascript"], link[rel="stylesheet"][type="text/javascript"]';
+
+    private proxies: {[name: string]: ProxyConstructor} = {};
 
     constructor() {
 
@@ -22,30 +34,32 @@ export class JsssPolyfill {
         }
 
         // Get JS Style Sheets
-        let $stylesheets = Array.from(document.querySelectorAll('style[type="text/javascript"]')) as Array<HTMLStyleElement>;
-        let $externalStylesheets = Array.from(document.querySelectorAll('link[rel="stylesheet"][type="text/javascript"]')) as Array<HTMLLinkElement>;
+        let $stylesheets = Array.from(document.querySelectorAll(this.stylesheetSelectors)) as Array<HTMLStyleElement | HTMLLinkElement>;
 
-        // Add empty style collections to document
-        document.tags = {};
-        document.ids = {};
-        document.classes = {};
+        this.initialiseStyleCollections();
 
         // Proxies to initialise undefined properties
-        this.tagsProxy = new Proxy(document.tags, PropertyInitialiserFactory.createHandler(document.tags));
-        this.idsProxy = new Proxy(document.ids, PropertyInitialiserFactory.createHandler(document.ids));
-        this.classesProxy = new Proxy(document.classes, PropertyInitialiserFactory.createHandler(document.classes));
+        this.createProxies();
 
         // Process each stylesheet
         $stylesheets.forEach($stylesheet => {
-            this.processStylesheet($stylesheet.innerHTML);
-        });
-
-        // Load each external stylesheet & process it
-        $externalStylesheets.forEach($stylesheet => {
-            this.loadExternalStylesheet($stylesheet);
+            this.loadStyles($stylesheet);
         });
 
         this.injectCss(this.buildCss());
+    }
+
+    /**
+     * Loads external stylesheet or gets stylesheet text
+     */
+    public loadStyles($stylesheet: HTMLStyleElement | HTMLLinkElement) {
+
+        if ($stylesheet.getAttribute('href') !== null) {
+            this.loadExternalStylesheet($stylesheet as HTMLLinkElement);
+        } else {
+            this.processStylesheet($stylesheet.innerText);
+        }
+
     }
 
     /**
@@ -54,14 +68,12 @@ export class JsssPolyfill {
     public processStylesheet(styles: string) {
 
         // Replace document.X assignments with calls to proxy
-        styles = styles
-            .replace(/document.tags/gi, 'this.tagsProxy')
-            .replace(/document.ids/gi, 'this.idsProxy')
-            .replace(/document.classes/gi, 'this.classesProxy');
+        this.collectionNames.forEach(name => {
+            styles = styles.replace(new RegExp(`document.${name}`, 'gi'), `this.proxies['${name}']`);
+        });
 
         // Am I eval? Yes I am
         eval(styles);
-
     }
 
     /**
@@ -92,12 +104,11 @@ export class JsssPolyfill {
     private buildCss(): string {
 
         let cssStyles = '';
-        let collectionNames = ['tags', 'ids', 'classes'];
 
-        collectionNames.forEach(name => {
+        this.collectionNames.forEach(name => {
 
             let collection: JsssStyleCollection = document[name];
-            let prefix = name === 'ids' ? '#' : name === 'classes' ? '.' : '';
+            let prefix = this.collectionPrefixes[name];
 
             for (let id in collection) {
                 cssStyles += `${prefix}${id} {`;
@@ -138,6 +149,24 @@ export class JsssPolyfill {
         })
 
         return propertyName;
+    }
+
+    /**
+     * Add empty style collections to document
+     */
+    private initialiseStyleCollections() {
+        this.collectionNames.forEach(name => {
+            document[name] = {};
+        });
+    }
+
+    /**
+     * Creates proxies to initialise undefined properties in each style collection
+     */
+    private createProxies() {
+        this.collectionNames.forEach(name => {
+            this.proxies[name] = new Proxy(document[name], PropertyInitialiserFactory.createHandler(document[name]));
+        });
     }
 
 }
